@@ -1,16 +1,15 @@
 ---
-name: "Template"
-guid: "eb5d7894-8eef-4b36-aa6f-5d124e828ce1"
-version: "1.0.0.0"
-targetAbi: "10.9.0.0"
-framework: "net8.0"
-overview: "Short description about your plugin"
+name: "SortingAdditions"
+guid: "144e0b9a-c908-416c-a11f-b495b6c52093"
+version: "0.0.0.1"
+targetAbi: "10.11.0.0"
+framework: "net9.0"
+overview: "Adds extra sorting options to the library."
 description: >
-  This is a longer description that can span more than one
-  line and include details about your plugin.
+  This plugin adds extra sorting options to the library, such as sorting by date added, release date, or custom metadata fields. It also allows users to create custom sorting rules based on their preferences.
 category: "General"
-owner: "jellyfin"
+owner: "AnzoDK"
 artifacts:
-- "Jellyfin.Plugin.Template.dll"
+- "Jellyfin.Plugin.SortAdditions.dll"
 changelog: >
   changelog

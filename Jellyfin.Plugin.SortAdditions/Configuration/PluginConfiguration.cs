@@ -29,11 +29,17 @@ public class PluginConfiguration : BasePluginConfiguration
     public PluginConfiguration()
     {
         // set default options here
+        AdditionsEnabled = true;
         Options = SomeOptions.AnotherOption;
         TrueFalseSetting = true;
         AnInteger = 2;
         AString = "string";
     }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the sorting additions are enabled.
+    /// </summary>
+    public bool AdditionsEnabled { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether some true or false setting is enabled..
