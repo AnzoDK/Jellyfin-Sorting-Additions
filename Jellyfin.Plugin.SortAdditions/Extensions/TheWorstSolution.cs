@@ -23,12 +23,12 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
     {
         private readonly ILibraryManager _libraryManager;
         private readonly IHttpClientFactory _httpClientFactory;
-        private readonly Logger<TheWorstSolution> _logger;
+        private readonly Logger _logger;
 
         public TheWorstSolution(
             ILibraryManager libraryManager,
             IHttpClientFactory httpClientFactory,
-            Logger<TheWorstSolution> logger)
+            Logger logger)
         {
             _libraryManager = libraryManager;
             _httpClientFactory = httpClientFactory;
@@ -46,7 +46,7 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
         public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
         {
             string tagBase = "Anime Season: ";
-            _logger.LogInformation("Starting anime Re-tagging task...");
+            _logger.Info("Starting anime Re-tagging task...");
 
             var allItems = _libraryManager.GetItemList(new InternalItemsQuery
             {
@@ -56,7 +56,7 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
                 Tags = ["anime"],
             }).ToList();
 
-            _logger.LogInformation("Found {Count} items in the library. (Counting movies and series)", allItems.Count);
+            _logger.Info($"Found {allItems.Count} items in the library. (Counting movies and series)");
             double percentPoint = 100.0 / allItems.Count;
             double currentProgress = 0;
 
@@ -67,19 +67,19 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
                 cancellationToken.ThrowIfCancellationRequested();
                 if (item.ProductionYear == null || item.ProductionYear == 0)
                 {
-                    _logger.LogWarning("Skipping item '{Name}' (ID: {Id}) due to missing or invalid production year.", item.Name, item.Id);
+                    _logger.Warning($"Skipping item '{item.Name}' (ID: {item.Id}) due to missing or invalid production year.");
                     continue;
                 }
 
                 if (item is Series series && !series.Children.Any())
                 {
-                    _logger.LogWarning("Skipping series '{Name}' (ID: {Id}) due to missing season information.", item.Name, item.Id);
+                    _logger.Warning($"Skipping series '{item.Name}' (ID: {item.Id}) due to missing season information.");
                     continue;
                 }
 
                 if (item.Tags.Any(t => t.StartsWith(tagBase, StringComparison.OrdinalIgnoreCase)))
                 {
-                    _logger.LogInformation("Item '{Name}' (ID: {Id}) already has a season tag. Stripping...", item.Name, item.Id);
+                    _logger.Info($"Item '{item.Name}' (ID: {item.Id}) already has a season tag. Stripping...");
                     item.Tags = item.Tags.Where(t => !t.StartsWith(tagBase, StringComparison.OrdinalIgnoreCase)).ToArray();
                     await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
                 }
@@ -91,14 +91,14 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
                     {
                         if (season.ProductionYear == null || season.ProductionYear == 0 || season.GetEpisodes().Count == 0)
                         {
-                            _logger.LogWarning("Skipping season '{Name}' (ID: {Id}) of series '{SeriesName}' (ID: {SeriesId}) due to missing or invalid production year or no episodes.", season.Name, season.Id, seriesItem.Name, seriesItem.Id);
+                            _logger.Warning($"Skipping season '{season.Name}' (ID: {season.Id}) of series '{seriesItem.Name}' (ID: {seriesItem.Id}) due to missing or invalid production year or no episodes.");
                             continue;
                         }
 
                         DateTime? seasonRelationDate = season.PremiereDate;
                         if (seasonRelationDate == null)
                         {
-                            _logger.LogWarning("Season '{Name}' (ID: {Id}) of series '{SeriesName}' (ID: {SeriesId}) is missing a premiere date. Skipping...", season.Name, season.Id, seriesItem.Name, seriesItem.Id);
+                            _logger.Warning($"Season '{season.Name}' (ID: {season.Id}) of series '{seriesItem.Name}' (ID: {seriesItem.Id}) is missing a premiere date. Skipping...");
                             continue;
                         }
 
@@ -109,26 +109,26 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
                     }
 
                     await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
-                    _logger.LogInformation("Added season tags '{Tags}' to series '{Name}' (ID: {Id}).", addedTags.TrimEnd(' ', ';'), item.Name, item.Id);
+                    _logger.Info($"Added season tags '{addedTags.TrimEnd(' ', ';')}' to series '{item.Name}' (ID: {item.Id}).");
                 }
                 else if (item is Movie movieItem)
                 {
                     DateTime? seasonRelationDate = movieItem.PremiereDate;
                     if (seasonRelationDate == null)
                     {
-                        _logger.LogWarning("Movie '{Name}' (ID: {Id}) is missing a premiere date. Skipping...", movieItem.Name, movieItem.Id);
+                        _logger.Warning($"Movie '{movieItem.Name}' (ID: {movieItem.Id}) is missing a premiere date. Skipping...");
                         continue;
                     }
 
                     string newSeasonTag = tagBase + AnimeSeasonHelper.GetAnimeSeasonFromDate(seasonRelationDate.Value);
                     item.AddTag(newSeasonTag);
                     await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
-                    _logger.LogInformation("Added season tag '{Tag}' to movie '{Name}' (ID: {Id}).", newSeasonTag, item.Name, item.Id);
+                    _logger.Info($"Added season tag '{newSeasonTag}' to movie '{item.Name}' (ID: {item.Id}).");
                 }
             }
 
             progress.Report(100);
-            _logger.LogInformation("Anime Re-tagging task completed.");
+            _logger.Info("Anime Re-tagging task completed.");
         }
 
         public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()

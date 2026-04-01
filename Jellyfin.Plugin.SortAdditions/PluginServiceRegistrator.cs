@@ -11,6 +11,8 @@ namespace Jellyfin.Plugin.SortAdditions
     {
         public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
         {
+            serviceCollection.AddHttpClient();
+            serviceCollection.AddSingleton<Logger>();
             serviceCollection.AddTransient<Extensions.TheWorstSolution>();
         }
     }
