@@ -12,7 +12,7 @@
             "version": "0.0.1",
             "changelog": "Initial release",
             "targetAbi": "10.11.0.0",
-            "sourceUrl": "https://github.com/AnzoDK/Jellyfin-Sorting-Additions/releases/download/v0.0.1/Jellyfin-Sorting-Additions_0.0.1.zip",
+            "sourceUrl": "https://github.com/AnzoDK/Jellyfin-Sorting-Additions/releases/download/v0.0.1/Jellyfin.Plugin.SortAdditions_0.0.1.zip",
             "checksum": "2e4cc4ebc2bc02797da1b376ab0d07ea",
             "timestamp": "2026-04-01T00:00:00Z"
         }
