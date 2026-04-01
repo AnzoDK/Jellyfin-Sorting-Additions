@@ -9,6 +9,14 @@
     "imageUrl": "https://raw.githubusercontent.com/AnzoDK/Jellyfin-Sorting-Additions/refs/heads/master/logoSprite.png",
     "versions": [
         {
+            "version": "1.0.0.6",
+            "changelog": "Fixed assembly versioning being stuck at 0.0.0.0",
+            "targetAbi": "10.11.0.0",
+            "sourceUrl": "https://github.com/AnzoDK/Jellyfin-Sorting-Additions/releases/download/v0.0.6/Jellyfin.Plugin.SortAdditions_0.0.6.zip",
+            "checksum": "31f33ce5caf0c480dee8e331edf6cd92",
+            "timestamp": "2026-04-01T11:12:00Z"
+        },
+        {
             "version": "1.0.0.5",
             "changelog": "Fixed a critical init error that caused the plugin to malfunction on startup.",
             "targetAbi": "10.11.0.0",
