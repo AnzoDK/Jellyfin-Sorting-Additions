@@ -13,6 +13,11 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
             int month = releaseDate.Month;
             int year = releaseDate.Year;
 
+            if (month == 12)
+            {
+                year += 1; // December counts as the next year's winter season
+            }
+
             string season = month switch
             {
                 12 or 1 or 2 => "Winter",
