@@ -6,14 +6,14 @@
     "overview": "Comprehensive sorting plugin with additional sorting criteria and custom rule creation.",
     "owner": "AnzoDK",
     "category": "General",
-    "imageUrl": "https://raw.githubusercontent.com/AnzoDK/jellyfin-plugin-sorting-additions/main/images/logo.png",
+    "imageUrl": "https://raw.githubusercontent.com/AnzoDK/Jellyfin-Sorting-Additions/refs/heads/master/logoSprite.png",
     "versions": [
         {
             "version": "0.0.1",
             "changelog": "Initial release",
             "targetAbi": "10.11.0.0",
             "sourceUrl": "https://github.com/AnzoDK/Jellyfin-Sorting-Additions/releases/download/v0.0.1/Jellyfin-Sorting-Additions_0.0.1.zip",
-            "checksum": "ccea48d400bed3254bd1d54d4aa2dd89",
+            "checksum": "2e4cc4ebc2bc02797da1b376ab0d07ea",
             "timestamp": "2026-04-01T00:00:00Z"
         }
     ]

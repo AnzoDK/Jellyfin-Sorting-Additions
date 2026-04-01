@@ -26,7 +26,7 @@ public class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
     }
 
     /// <inheritdoc />
-    public override string Name => "Template";
+    public override string Name => "SortingAdditions";
 
     /// <inheritdoc />
     public override Guid Id => Guid.Parse("144e0b9a-c908-416c-a11f-b495b6c52093");
