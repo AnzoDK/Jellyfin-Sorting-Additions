@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Jellyfin.Plugin.SortAdditions
 {
-    public class SortAdditionsServiceRegistrator : IPluginServiceRegistrator
+    public class PluginServiceRegistrator : IPluginServiceRegistrator
     {
         public void RegisterServices(IServiceCollection serviceCollection, IServerApplicationHost applicationHost)
         {
