@@ -89,6 +89,11 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
                     string addedTags = string.Empty;
                     foreach (Season season in seriesItem.Children.OfType<Season>())
                     {
+                        if (season.IndexNumber == null || season.IndexNumber == 0)
+                        {
+                            _logger.Warning($"Skipping season '{season.Name}' (ID: {season.Id}) of series '{seriesItem.Name}' (ID: {seriesItem.Id}) Season is either a special or a custom entry");
+                        }
+
                         if (season.ProductionYear == null || season.ProductionYear == 0 || season.GetEpisodes().Count == 0)
                         {
                             _logger.Warning($"Skipping season '{season.Name}' (ID: {season.Id}) of series '{seriesItem.Name}' (ID: {seriesItem.Id}) due to missing or invalid production year or no episodes.");
