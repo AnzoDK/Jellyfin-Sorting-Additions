@@ -1,6 +1,8 @@
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+/*#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System.Collections.Generic;
+using System.Linq;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.TV;
 
 namespace Jellyfin.Plugin.SortAdditions.Extensions
 {
@@ -22,7 +24,18 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
                 return y == null ? 1 : -1; // If one item is null, sort it after the non-null item
             }
 
+            if (x is Series series)
+            {
+                if (series.Children.OfType<Season>().Any())
+                {
+                    var orderedSeasons = series.Children.OfType<Season>().OrderBy(s => s.PremiereDate).ToList();
+                    var firstSeason = orderedSeasons.FirstOrDefault();
+                    if(firstSeason == null || firstSeason.)
+                }
+            }
+
             throw new System.NotImplementedException();
         }
     }
 }
+*/
