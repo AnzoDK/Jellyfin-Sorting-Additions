@@ -78,7 +78,7 @@ namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
                     continue;
                 }
 
-                string providerToUse = item.ProviderIds.OrderBy(x => item.ProviderIds.ContainsKey(x.Key) ? providerIdPriorities[x.Key] : int.MaxValue).First().Key;
+                string providerToUse = providerIdPriorities.First(x => item.ProviderIds.ContainsKey(x.Key)).Key;
                 if (item is Series)
                 {
                     // MediaBrowser
