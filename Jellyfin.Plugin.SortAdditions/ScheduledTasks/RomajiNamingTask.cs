@@ -97,6 +97,10 @@ namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
                             SearchInfo = new SeriesInfo
                             {
                                 IsAutomated = false,
+                                ProviderIds = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                                {
+                                    { provId, item.ProviderIds[provId] }
+                                }
                             },
                             IncludeDisabledProviders = false
                         };
