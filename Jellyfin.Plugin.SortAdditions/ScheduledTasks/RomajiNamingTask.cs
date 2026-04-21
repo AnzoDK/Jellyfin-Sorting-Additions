@@ -69,7 +69,7 @@ namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
                 Dictionary<string, int> providerIdPriorities = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
                 {
                     { "AniDB", 1 },
-                    { "MyAnimeList", 2 }
+                    { "AniList", 2 }
                 };
 
                 if (!item.ProviderIds.Any(x => providerIdPriorities.ContainsKey(x.Key)))
@@ -78,50 +78,54 @@ namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
                     continue;
                 }
 
-                string providerToUse = providerIdPriorities.First(x => item.ProviderIds.ContainsKey(x.Key)).Key;
+                // string providerToUse = providerIdPriorities.First(x => item.ProviderIds.ContainsKey(x.Key)).Key;
                 if (item is Series)
                 {
                     // MediaBrowser
-                    RemoteSearchQuery<SeriesInfo> query = new RemoteSearchQuery<SeriesInfo>
+                    foreach (string provId in item.ProviderIds.Keys)
                     {
-                        ItemId = item.Id,
-                        SearchProviderName = providerToUse,
-                        SearchInfo = new SeriesInfo
+                        if (!providerIdPriorities.ContainsKey(provId))
                         {
-                            IsAutomated = false,
-                        },
-                        IncludeDisabledProviders = false
-                    };
-                    IEnumerable<MediaBrowser.Model.Providers.RemoteSearchResult>? searchResults = await _providerManager.GetRemoteSearchResults<Series, SeriesInfo>(query, cancellationToken).ConfigureAwait(false);
-                    if (searchResults == null || !searchResults.Any())
-                    {
-                        _logger.Info($"No search results found for series '{item.Name}' (ID: {item.Id}) using provider '{providerToUse}' - Skipping...");
+                            _logger.Info($"Skipping non-anime provider '{provId}'...");
+                            continue;
+                        }
+
+                        RemoteSearchQuery<SeriesInfo> query = new RemoteSearchQuery<SeriesInfo>
+                        {
+                            ItemId = item.Id,
+                            SearchProviderName = provId,
+                            SearchInfo = new SeriesInfo
+                            {
+                                IsAutomated = false,
+                            },
+                            IncludeDisabledProviders = false
+                        };
+
+                        IEnumerable<MediaBrowser.Model.Providers.RemoteSearchResult>? searchResults = await _providerManager.GetRemoteSearchResults<Series, SeriesInfo>(query, cancellationToken).ConfigureAwait(false);
+                        if (searchResults == null || !searchResults.Any())
+                        {
+                            _logger.Info($"No search results found for series '{item.Name}' (ID: {item.Id}) using provider '{provId}' - Skipping...");
+                            continue;
+                        }
+
+                        _logger.Info($"Assuming (Hoping) '{item.Name}' (ID: {item.Id}) is: '{searchResults.First().Name}' using provider '{provId}'.");
+
+                        if (item.OriginalTitle.Contains(searchResults.First().Name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _logger.Info($"Series '{item.Name}' (ID: {item.Id}) has romaji in original title - Assuming it's the correct entry!");
+                        }
+
+                        if (item.SortName.Contains(searchResults.First().Name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _logger.Info($"Series '{item.Name}' (ID: {item.Id}) has romaji in sort name - Skipping...");
+                            continue;
+                        }
+
+                        item.SortName = $"{item.SortName} ({searchResults.First().Name})";
+                        await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
+                        _logger.Info($"Updated sort name for series '{item.Name}' (ID: {item.Id}) to '{item.SortName}'.");
                         continue;
                     }
-
-                    if (!searchResults.Any())
-                    {
-                        _logger.Info($"No search results found for series '{item.Name}' (ID: {item.Id}) using provider '{providerToUse}' - Skipping...");
-                        continue;
-                    }
-
-                    _logger.Info($"Assuming (Hoping) '{item.Name}' (ID: {item.Id}) is: '{searchResults.First().Name}' using provider '{providerToUse}'.");
-
-                    if (item.OriginalTitle.Contains(searchResults.First().Name, StringComparison.OrdinalIgnoreCase))
-                    {
-                        _logger.Info($"Series '{item.Name}' (ID: {item.Id}) has romaji in original title - Assuming it's the correct entry!");
-                    }
-
-                    if (item.SortName.Contains(searchResults.First().Name, StringComparison.OrdinalIgnoreCase))
-                    {
-                        _logger.Info($"Series '{item.Name}' (ID: {item.Id}) has romaji in sort name - Skipping...");
-                        continue;
-                    }
-
-                    item.SortName = $"{item.SortName} ({searchResults.First().Name})";
-                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
-                    _logger.Info($"Updated sort name for series '{item.Name}' (ID: {item.Id}) to '{item.SortName}'.");
-                    continue;
                 }
             }
 
