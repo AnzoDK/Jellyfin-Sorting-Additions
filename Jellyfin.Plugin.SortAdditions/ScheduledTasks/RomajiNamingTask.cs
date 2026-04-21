@@ -84,7 +84,7 @@ namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
                     // MediaBrowser
                     foreach (string provId in item.ProviderIds.Keys)
                     {
-                        if (!providerIdPriorities.ContainsKey(provId))
+                        if (!providerIdPriorities.ContainsKey(provId) || string.IsNullOrEmpty(item.ProviderIds[provId]))
                         {
                             _logger.Info($"Skipping non-anime provider '{provId}'...");
                             continue;
