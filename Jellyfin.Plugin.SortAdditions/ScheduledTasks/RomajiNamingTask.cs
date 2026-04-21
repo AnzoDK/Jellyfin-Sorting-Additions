@@ -106,6 +106,9 @@ namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
                         };
 
                         IEnumerable<MediaBrowser.Model.Providers.RemoteSearchResult>? searchResults = await _providerManager.GetRemoteSearchResults<Series, SeriesInfo>(query, cancellationToken).ConfigureAwait(false);
+
+                        _logger.Info($"Got {searchResults?.Count() ?? 0} search results for series '{item.Name}' (ID: {item.Id}) using provider '{provId}'.");
+
                         if (searchResults == null || !searchResults.Any())
                         {
                             _logger.Info($"No search results found for series '{item.Name}' (ID: {item.Id}) using provider '{provId}' - Skipping...");
