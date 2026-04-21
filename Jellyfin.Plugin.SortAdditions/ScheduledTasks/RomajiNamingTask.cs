@@ -1,5 +1,4 @@
 #pragma warning disable CS1591
-#pragma warning disable CA2007
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,39 +6,41 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Jellyfin.Data.Enums;
+using Jellyfin.Plugin.SortAdditions.Helpers;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Providers;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Tasks;
-using Microsoft.Extensions.Logging;
 
-namespace Jellyfin.Plugin.SortAdditions.Extensions
+namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
 {
-    /// <summary>
-    /// A class containing the worst solution to a problem.
-    /// </summary>
-    public class TheWorstSolution : IScheduledTask
+    public class RomajiNamingTask : IScheduledTask
     {
         private readonly ILibraryManager _libraryManager;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly Logger _logger;
+        private readonly IProviderManager _providerManager;
 
-        public TheWorstSolution(
+        public RomajiNamingTask(
             ILibraryManager libraryManager,
             IHttpClientFactory httpClientFactory,
+            IProviderManager providerManager,
             Logger logger)
         {
             _libraryManager = libraryManager;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
+            _providerManager = providerManager;
         }
 
-        public string Name => "Re-Tag Anime To Season";
+        public string Name => "Append Romaji Name to Anime \"Original Title\"";
 
-        public string Key => "ReTagAnimeToSeason";
+        public string Key => "AppendRomajiToAnime";
 
-        public string Description => "A task that re-tags anime content to match their release season.";
+        public string Description => "A task that appends Romaji names to anime \"Original Title\" fields.";
 
         public string Category => "Sorting Additions";
 
@@ -53,7 +54,7 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
                 IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Series },
                 IsVirtualItem = false,
                 Recursive = true,
-                Tags = ["anime"],
+                Tags = ["anime"],  // Assume the library has tagged anime, this should be configureable
             }).ToList();
 
             _logger.Info($"Found {allItems.Count} items in the library. (Counting movies and series)");
@@ -65,6 +66,41 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
                 currentProgress += percentPoint;
                 progress.Report(currentProgress);
                 cancellationToken.ThrowIfCancellationRequested();
+
+                Dictionary<string, int> providerIdPriorities = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "AniDB", 1 },
+                    { "MyAnimeList", 2 }
+                };
+
+                if (!item.ProviderIds.Any(x => providerIdPriorities.ContainsKey(x.Key)))
+                {
+                    _logger.Info($"Item '{item.Name}' (ID: {item.Id}) doesn't have a compatible metadata provider - Skipping...");
+                    continue;
+                }
+
+                string providerToUse = item.ProviderIds.OrderBy(x => item.ProviderIds.ContainsKey(x.Key) ? providerIdPriorities[x.Key] : int.MaxValue).First().Key;
+                if (item is Series)
+                {
+                    // MediaBrowser
+                    RemoteSearchQuery<SeriesInfo> query = new RemoteSearchQuery<SeriesInfo>
+                    {
+                        ItemId = item.Id,
+                        SearchProviderName = providerToUse,
+                        SearchInfo = new SeriesInfo
+                        {
+                            IsAutomated = false,
+                        },
+                        IncludeDisabledProviders = false
+                    };
+                    var searchResults = await _providerManager.GetRemoteSearchResults<Series, SeriesInfo>(query, cancellationToken).ConfigureAwait(false);
+                    if (searchResults == null || !searchResults.Any())
+                    {
+                        _logger.Info($"No search results found for series '{item.Name}' (ID: {item.Id}) using provider '{providerToUse}' - Skipping...");
+                        continue;
+                    }
+                }
+
                 if (item.ProductionYear == null || item.ProductionYear == 0)
                 {
                     _logger.Warning($"Skipping item '{item.Name}' (ID: {item.Id}) due to missing or invalid production year.");
@@ -81,7 +117,7 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
                 {
                     _logger.Info($"Item '{item.Name}' (ID: {item.Id}) already has a season tag. Stripping...");
                     item.Tags = item.Tags.Where(t => !t.StartsWith(tagBase, StringComparison.OrdinalIgnoreCase)).ToArray();
-                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
+                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
                 }
 
                 if (item is Series seriesItem)
@@ -113,7 +149,7 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
                         addedTags += newSeasonTag + "; ";
                     }
 
-                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
+                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
                     _logger.Info($"Added season tags '{addedTags.TrimEnd(' ', ';')}' to series '{item.Name}' (ID: {item.Id}).");
                 }
                 else if (item is Movie movieItem)
@@ -127,7 +163,7 @@ namespace Jellyfin.Plugin.SortAdditions.Extensions
 
                     string newSeasonTag = tagBase + AnimeSeasonHelper.GetAnimeSeasonFromDate(seasonRelationDate.Value);
                     item.AddTag(newSeasonTag);
-                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
+                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
                     _logger.Info($"Added season tag '{newSeasonTag}' to movie '{item.Name}' (ID: {item.Id}).");
                 }
             }

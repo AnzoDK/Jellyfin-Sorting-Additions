@@ -1,7 +1,7 @@
 #pragma warning disable CS1591
 using System;
 
-namespace Jellyfin.Plugin.SortAdditions.Extensions
+namespace Jellyfin.Plugin.SortAdditions.Helpers
 {
     /// <summary>
     /// A class containing the worst solution to a problem.

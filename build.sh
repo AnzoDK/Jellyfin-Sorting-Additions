@@ -4,6 +4,21 @@ BUILD_SCRIPT_DIR=$(dirname "$(realpath "$0")")
 echo "Running from: "$BUILD_SCRIPT_DIR
 cd "$BUILD_SCRIPT_DIR"
 
+#Setup
+ARG_COUNT=$#
+for arg in "$@"; do
+    case $arg in
+        --no-auto-increment)
+        ;;
+        *)
+        echo "Unknown argument: $arg"
+        echo "Usage: $0 [--no-auto-increment]"
+        exit 1
+        ;;
+    esac
+done
+
+
 PREV_VERSION_QUOTED=$(cat build.yaml | awk 'BEGIN{ RS = "" ; FS = "\n"}{print $4}' | awk -F ': ' '{print $2}')
 
 CURR_VERSION=${PREV_VERSION_QUOTED:1:-1}

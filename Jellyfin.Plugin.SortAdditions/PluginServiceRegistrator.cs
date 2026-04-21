@@ -1,4 +1,5 @@
 #pragma warning disable CS1591
+using Jellyfin.Plugin.SortAdditions.ScheduledTasks;
 using MediaBrowser.Controller;
 
 #pragma warning disable CS1591
@@ -13,7 +14,8 @@ namespace Jellyfin.Plugin.SortAdditions
         {
             serviceCollection.AddHttpClient();
             serviceCollection.AddSingleton<Logger>();
-            serviceCollection.AddTransient<Extensions.TheWorstSolution>();
+            serviceCollection.AddTransient<TheWorstSolution>();
+            serviceCollection.AddTransient<RomajiNamingTask>();
         }
     }
 }
