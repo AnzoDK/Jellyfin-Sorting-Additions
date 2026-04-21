@@ -46,8 +46,7 @@ namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
 
         public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
         {
-            string tagBase = "Anime Season: ";
-            _logger.Info("Starting anime Re-tagging task...");
+            _logger.Info("Starting anime Romaji Naming task...");
 
             var allItems = _libraryManager.GetItemList(new InternalItemsQuery
             {
@@ -93,83 +92,41 @@ namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
                         },
                         IncludeDisabledProviders = false
                     };
-                    var searchResults = await _providerManager.GetRemoteSearchResults<Series, SeriesInfo>(query, cancellationToken).ConfigureAwait(false);
+                    IEnumerable<MediaBrowser.Model.Providers.RemoteSearchResult>? searchResults = await _providerManager.GetRemoteSearchResults<Series, SeriesInfo>(query, cancellationToken).ConfigureAwait(false);
                     if (searchResults == null || !searchResults.Any())
                     {
                         _logger.Info($"No search results found for series '{item.Name}' (ID: {item.Id}) using provider '{providerToUse}' - Skipping...");
                         continue;
                     }
-                }
 
-                if (item.ProductionYear == null || item.ProductionYear == 0)
-                {
-                    _logger.Warning($"Skipping item '{item.Name}' (ID: {item.Id}) due to missing or invalid production year.");
-                    continue;
-                }
-
-                if (item is Series series && !series.Children.Any())
-                {
-                    _logger.Warning($"Skipping series '{item.Name}' (ID: {item.Id}) due to missing season information.");
-                    continue;
-                }
-
-                if (item.Tags.Any(t => t.StartsWith(tagBase, StringComparison.OrdinalIgnoreCase)))
-                {
-                    _logger.Info($"Item '{item.Name}' (ID: {item.Id}) already has a season tag. Stripping...");
-                    item.Tags = item.Tags.Where(t => !t.StartsWith(tagBase, StringComparison.OrdinalIgnoreCase)).ToArray();
-                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
-                }
-
-                if (item is Series seriesItem)
-                {
-                    string addedTags = string.Empty;
-                    foreach (Season season in seriesItem.Children.OfType<Season>())
+                    if (!searchResults.Any())
                     {
-                        if (season.IndexNumber == null || season.IndexNumber == 0)
-                        {
-                            _logger.Warning($"Skipping season '{season.Name}' (ID: {season.Id}) of series '{seriesItem.Name}' (ID: {seriesItem.Id}) Season is either a special or a custom entry");
-                        }
-
-                        if (season.ProductionYear == null || season.ProductionYear == 0 || season.GetEpisodes().Count == 0)
-                        {
-                            _logger.Warning($"Skipping season '{season.Name}' (ID: {season.Id}) of series '{seriesItem.Name}' (ID: {seriesItem.Id}) due to missing or invalid production year or no episodes.");
-                            continue;
-                        }
-
-                        DateTime? seasonRelationDate = season.PremiereDate;
-                        if (seasonRelationDate == null)
-                        {
-                            _logger.Warning($"Season '{season.Name}' (ID: {season.Id}) of series '{seriesItem.Name}' (ID: {seriesItem.Id}) is missing a premiere date. Skipping...");
-                            continue;
-                        }
-
-                        string newSeasonTag = tagBase + AnimeSeasonHelper.GetAnimeSeasonFromDate(seasonRelationDate.Value);
-
-                        item.AddTag(newSeasonTag);
-                        addedTags += newSeasonTag + "; ";
-                    }
-
-                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
-                    _logger.Info($"Added season tags '{addedTags.TrimEnd(' ', ';')}' to series '{item.Name}' (ID: {item.Id}).");
-                }
-                else if (item is Movie movieItem)
-                {
-                    DateTime? seasonRelationDate = movieItem.PremiereDate;
-                    if (seasonRelationDate == null)
-                    {
-                        _logger.Warning($"Movie '{movieItem.Name}' (ID: {movieItem.Id}) is missing a premiere date. Skipping...");
+                        _logger.Info($"No search results found for series '{item.Name}' (ID: {item.Id}) using provider '{providerToUse}' - Skipping...");
                         continue;
                     }
 
-                    string newSeasonTag = tagBase + AnimeSeasonHelper.GetAnimeSeasonFromDate(seasonRelationDate.Value);
-                    item.AddTag(newSeasonTag);
+                    _logger.Info($"Assuming (Hoping) '{item.Name}' (ID: {item.Id}) is: '{searchResults.First().Name}' using provider '{providerToUse}'.");
+
+                    if (item.OriginalTitle.Contains(searchResults.First().Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.Info($"Series '{item.Name}' (ID: {item.Id}) has romaji in original title - Assuming it's the correct entry!");
+                    }
+
+                    if (item.SortName.Contains(searchResults.First().Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        _logger.Info($"Series '{item.Name}' (ID: {item.Id}) has romaji in sort name - Skipping...");
+                        continue;
+                    }
+
+                    item.SortName = $"{item.SortName} ({searchResults.First().Name})";
                     await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
-                    _logger.Info($"Added season tag '{newSeasonTag}' to movie '{item.Name}' (ID: {item.Id}).");
+                    _logger.Info($"Updated sort name for series '{item.Name}' (ID: {item.Id}) to '{item.SortName}'.");
+                    continue;
                 }
             }
 
             progress.Report(100);
-            _logger.Info("Anime Re-tagging task completed.");
+            _logger.Info("Anime Romaji Naming task completed.");
         }
 
         public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
