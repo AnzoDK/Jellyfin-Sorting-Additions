@@ -1,7 +1,7 @@
 ---
 name: "SortingAdditions"
 guid: "144e0b9a-c908-416c-a11f-b495b6c52093"
-version: "1.0.0.17"
+version: "1.0.0.18"
 targetAbi: "10.11.0.0"
 framework: "net9.0"
 overview: "Adds extra sorting options to the library."

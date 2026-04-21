@@ -115,6 +115,12 @@ namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
                             continue;
                         }
 
+                        if (string.IsNullOrEmpty(searchResults.First().Name))
+                        {
+                            _logger.Info($"Search result for series '{item.Name}' (ID: {item.Id}) using provider '{provId}' doesn't have a name - Skipping...");
+                            continue;
+                        }
+
                         _logger.Info($"Assuming (Hoping) '{item.Name}' (ID: {item.Id}) is: '{searchResults.First().Name}' using provider '{provId}'.");
 
                         if (item.OriginalTitle.Contains(searchResults.First().Name, StringComparison.OrdinalIgnoreCase))
@@ -125,13 +131,13 @@ namespace Jellyfin.Plugin.SortAdditions.ScheduledTasks
                         if (item.SortName.Contains(searchResults.First().Name, StringComparison.OrdinalIgnoreCase))
                         {
                             _logger.Info($"Series '{item.Name}' (ID: {item.Id}) has romaji in sort name - Skipping...");
-                            continue;
+                            break;
                         }
 
                         item.SortName = $"{item.SortName} ({searchResults.First().Name})";
                         await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken).ConfigureAwait(false);
                         _logger.Info($"Updated sort name for series '{item.Name}' (ID: {item.Id}) to '{item.SortName}'.");
-                        continue;
+                        break;
                     }
                 }
             }
